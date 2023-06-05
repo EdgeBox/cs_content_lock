@@ -9,6 +9,8 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\cms_content_sync\Entity\EntityStatus;
 use Drupal\cms_content_sync\Entity\Pool;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
+
 
 /**
  * Implements hook_form_alter
@@ -106,7 +108,7 @@ function cs_content_lock_cms_content_sync_views_sync_state_alter(&$entity, &$mes
 
       switch ($lock_state) {
         case Lock::LOCKED_UNLOCKABLE:
-          $messages['lock_state'] = t('The entity is locked on this site and can be unlocked.');
+          $messages['lock_state'] = t('The content is locked at this site for editing.');
           break;
         case Lock::LOCKED_NOT_UNLOCKABLE:
 
@@ -115,26 +117,24 @@ function cs_content_lock_cms_content_sync_views_sync_state_alter(&$entity, &$mes
           if (!$name) {
             $name = $entity->field_content_sync_content_lock->value;
           }
-          $view_source_url = Pool::getAllExternalUsages($entity)[$pool->id()] ;
+          $site_internal_id = $pool->getClient()->getInternalSiteId($entity->field_content_sync_content_lock->value);
+          $view_source_url = Pool::getAllExternalUsages($entity)[$pool->id()][$site_internal_id] ?? NULL;
 
           if(!is_null($view_source_url)) {
-            $site = Link::fromTextAndUrl($name, $view_source_url)->toString();
+            $url = Url::fromUri($view_source_url);
+            $site = Link::fromTextAndUrl($name, $url)->toString();
           } else {
             $site = $name;
           }
 
-          $messages['lock_state'] = t('The entity is locked at @site and can not be unlocked.', [
+          $messages['lock_state'] = t('The content is locked at @site for editing.', [
             '@site' => $site
           ]);
           break;
 
         default:
-          $messages['lock_state'] = t('The entity is not locked.');
+          $messages['lock_state'] = t('<i>The content is not locked for editing.</i>');
       }
     }
-
-
-
-
   }
 }
