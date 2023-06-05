@@ -1,0 +1,15 @@
+cs_content_lock.lock:
+  path: '/admin/content/{entity_type}/{entity_id}/lock'
+  defaults:
+    _controller: '\Drupal\cs_content_lock\Controller\Lock::lock'
+    _title: 'Lock'
+  requirements:
+    _permission: 'cms content sync lock unlock content'
+
+cs_content_lock.unlock:
+  path: '/admin/content/{entity_type}/{entity_id}/unlock'
+  defaults:
+    _controller: '\Drupal\cs_content_lock\Controller\Lock::unlock'
+    _title: 'Unlock'
+  requirements:
+    _permission: 'cms content sync lock unlock content'

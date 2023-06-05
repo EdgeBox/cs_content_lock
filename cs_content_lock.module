@@ -1,0 +1,140 @@
+<?php
+
+use Drupal\cms_content_sync\Controller\ContentSyncSettings;
+use Drupal\cs_content_lock\Controller\Lock;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\cms_content_sync\Entity\EntityStatus;
+use Drupal\cms_content_sync\Entity\Pool;
+use Drupal\Core\Link;
+
+/**
+ * Implements hook_form_alter
+ *
+ * Set the field field_content_sync_content_lock to read only.
+ */
+function cs_content_lock_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if(isset($form['field_content_sync_content_lock'])) {
+    $form['field_content_sync_content_lock']['#disabled'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_entity_operations
+ *
+ * To add the lock and unlock operations.
+ */
+function cs_content_lock_entity_operation(EntityInterface $entity) {
+  $operations = [];
+
+  // Ignore if the site wasn't registered yet.
+  if (!ContentSyncSettings::getInstance()->getSiteUuid()) {
+    return $operations;
+  }
+
+  // Check if the current user has the permission to lock/unlock entities.
+  if(\Drupal::currentUser()->hasPermission('cms content sync lock unlock content')) {
+
+    // Check if the content lock field has been added to the entity type.
+    if ($entity instanceof FieldableEntityInterface && $entity->hasField('field_content_sync_content_lock')) {
+
+      // Check if the entity is locked/unlocked
+      if (Lock::lockStatus($entity) == Lock::LOCKED_UNLOCKABLE) {
+
+        $operations['unlock'] = [
+          'title' => t('Unlock'),
+          'url' => \Drupal\Core\Url::fromRoute('cs_content_lock.unlock', [
+            'entity_type' => $entity->getEntityTypeId(),
+            'entity_id' => $entity->id()
+          ]),
+          'weight' => 50,
+        ];
+
+
+      } else if (Lock::lockStatus($entity) == Lock::UNLOCKED) {
+        $operations['lock'] = [
+          'title' => t('Lock'),
+          'url' => \Drupal\Core\Url::fromRoute('cs_content_lock.lock', [
+            'entity_type' => $entity->getEntityTypeId(),
+            'entity_id' => $entity->id()
+          ]),
+          'weight' => 50,
+        ];
+      }
+    }
+  }
+
+  return $operations;
+}
+
+/**
+ * Implements hook_entity_access().
+ *
+ * Prevent access to the entity edit page if the entity is locked.
+ */
+function cs_content_lock_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
+  if ($entity instanceof FieldableEntityInterface && $entity->hasField('field_content_sync_content_lock')) {
+    if ($operation === 'update') {
+      if (Lock::lockStatus($entity) == Lock::LOCKED_NOT_UNLOCKABLE) {
+        return \Drupal\Core\Access\AccessResult::forbidden();
+      }
+    } else if ($account->id() == 1) {
+      if (Lock::lockStatus($entity) == Lock::LOCKED_NOT_UNLOCKABLE) {
+        \Drupal::messenger()->addWarning(t('This entity can not be edited by editors since it is locked by another site. Only the administrator is able to visit the edit page.'));
+      }
+    }
+
+    return \Drupal\Core\Access\AccessResult::allowed();
+  }
+}
+
+/**
+ * Implements hook_cms_content_sync_views_sync_state_alter()
+ *
+ * Extend the CMS Content Sync - Sync State field to show the lock state.
+ */
+function cs_content_lock_cms_content_sync_views_sync_state_alter(&$entity, &$messages) {
+  if ($entity instanceof FieldableEntityInterface && $entity->hasField('field_content_sync_content_lock')) {
+    $lock_state = Lock::lockStatus($entity);
+
+    // Get the status entity.
+    $entity_status = EntityStatus::getInfosForEntity($entity->getEntityTypeId(), $entity->uuid());
+    foreach ($entity_status as $status) {
+
+
+      switch ($lock_state) {
+        case Lock::LOCKED_UNLOCKABLE:
+          $messages['lock_state'] = t('The entity is locked on this site and can be unlocked.');
+          break;
+        case Lock::LOCKED_NOT_UNLOCKABLE:
+
+          $pool = $status->getPool();
+          $name = $pool->getClient()->getSiteName($entity->field_content_sync_content_lock->value);
+          if (!$name) {
+            $name = $entity->field_content_sync_content_lock->value;
+          }
+          $view_source_url = Pool::getAllExternalUsages($entity)[$pool->id()] ;
+
+          if(!is_null($view_source_url)) {
+            $site = Link::fromTextAndUrl($name, $view_source_url)->toString();
+          } else {
+            $site = $name;
+          }
+
+          $messages['lock_state'] = t('The entity is locked at @site and can not be unlocked.', [
+            '@site' => $site
+          ]);
+          break;
+
+        default:
+          $messages['lock_state'] = t('The entity is not locked.');
+      }
+    }
+
+
+
+
+  }
+}

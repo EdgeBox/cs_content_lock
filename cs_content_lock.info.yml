@@ -1,0 +1,11 @@
+name: CMS Content Sync - Content Lock
+description: The CS Content Lock module extends the functionality of Content Sync by enabling editors to lock content on one site, preventing it from being edited on another site.
+package: CMS Content Sync
+
+type: module
+core_version_requirement: ^9 || ^10
+
+dependencies:
+  - cms_content_sync:cms_content_sync
+  - cms_content_sync_views:cms_content_sync_views
+  - drupal:views

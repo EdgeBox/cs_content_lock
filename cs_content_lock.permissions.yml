@@ -1,0 +1,3 @@
+cms content sync lock unlock content:
+  title: 'Lock and unlock content'
+  description: 'Allows the user to lock and unlock content.'
