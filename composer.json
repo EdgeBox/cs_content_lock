@@ -23,6 +23,6 @@
   ],
   "require": {
     "drupal/cms_content_sync": "^2 || ^3",
-    "drupal/core": "^8 || ^9 || ^10 || ^11",
+    "drupal/core": "^8 || ^9 || ^10 || ^11"
   }
 }
