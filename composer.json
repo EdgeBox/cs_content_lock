@@ -1,0 +1,28 @@
+{
+  "name": "drupal/cs_content_lock",
+  "description": "The CS Content Lock module extends the functionality of Content Sync by enabling editors to lock content on one site, preventing it from being edited on another site.",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev",
+  "keywords": [
+    "Drupal",
+    "Content Sync"
+  ],
+  "homepage": "https://cms-content-sync.io/",
+  "authors": [
+    {
+      "name": "Edge Box GmbH",
+      "homepage": "https://cms-content-sync.io/"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  ],
+  "require": {
+    "drupal/cms_content_sync": "^2 || ^3",
+    "drupal/core": "^8 || ^9 || ^10 || ^11",
+  }
+}
