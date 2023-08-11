@@ -88,7 +88,7 @@ function cs_content_lock_entity_access(EntityInterface $entity, $operation, Acco
       }
     }
 
-    return \Drupal\Core\Access\AccessResult::allowed();
+    return \Drupal\Core\Access\AccessResult::neutral();
   }
 }
 
