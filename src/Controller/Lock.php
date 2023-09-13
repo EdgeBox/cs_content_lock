@@ -11,6 +11,7 @@ use Drupal\cms_content_sync\SyncIntent;
 use Drupal\cms_content_sync\EntityStatusProxy;
 use Drupal\cms_content_sync\Entity\Pool;
 use Drupal\cms_content_sync\Entity\Flow;
+use Drupal\Core\Entity\EntityChangedInterface;
 
 /**
  * Lock controller.
@@ -33,6 +34,9 @@ class Lock extends ControllerBase {
     // Set lock field value.
     $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($entity_id);
     $entity->field_content_sync_content_lock = ContentSyncSettings::getInstance()->getSiteUuid();
+    if($entity instanceof EntityChangedInterface) {
+      $entity->setChangedTime(time());
+    }
 
     // @ToDo: Implement Try/Catch for entity save().
     $entity->save();
@@ -110,6 +114,9 @@ class Lock extends ControllerBase {
     // Set lock field value.
     $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($entity_id);
     $entity->field_content_sync_content_lock = NULL;
+    if ($entity instanceof EntityChangedInterface) {
+      $entity->setChangedTime(time());
+    }
 
     // @ToDo: Implement Try/Catch for entity save().
     $entity->save();
